@@ -35,16 +35,24 @@ fastify.get("/", async (request, reply) => {
 });
 
 function parseSheet(sheet) {
-  const rowData = sheet.data[0].rowData.map((row) => {
+  let _s = {};
+  if (!sheet) {
+    return _s;
+  }
+  if (sheet.properties) {
+    _s.title = sheet.properties.title;
+  }
+
+  if (!sheet.data || !sheet.data[0] || !sheet.data[0].rowData) {
+    return _s;
+  }
+  _s.rows = sheet.data[0].rowData.map((row) => {
     const cells = row.values.map((cell) => {
       return cell.effectiveValue.stringValue || cell.effectiveValue.numberValue;
     });
     return { cells };
   });
-  return {
-    title: sheet.properties.title,
-    rowData,
-  };
+  return _s;
 }
 
 fastify.get("/:spreadsheetId", async (request, reply) => {
