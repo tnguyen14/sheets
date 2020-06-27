@@ -7,4 +7,4 @@ COPY package-lock.json /src/
 RUN npm install
 COPY . /src/
 
-CMD {"npm", "start"}
+CMD ["npm", "start"]
