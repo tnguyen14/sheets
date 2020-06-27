@@ -1,0 +1,23 @@
+{
+  "name": "@tridnguyen/sheets",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/tnguyen14/sheets.git"
+  },
+  "author": "Tri Nguyen <tri@tridnguyen.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tnguyen14/sheets/issues"
+  },
+  "homepage": "https://github.com/tnguyen14/sheets#readme",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "googleapis": "^52.1.0"
+  }
+}
