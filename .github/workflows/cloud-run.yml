@@ -22,7 +22,7 @@ jobs:
       # Setup gcloud CLI
       - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
         with:
-          version: '288.0.0'
+          version: '290.0.1'
           service_account_email: 'github-actions@build-tridnguyen-com.iam.gserviceaccount.com'
           service_account_key: ${{ secrets.SA_KEY }}
           project_id: 'build-tridnguyen-com'
