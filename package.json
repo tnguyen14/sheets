@@ -2,7 +2,7 @@
   "name": "@tridnguyen/sheets",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "api.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -18,6 +18,21 @@
   "homepage": "https://github.com/tnguyen14/sheets#readme",
   "dependencies": {
     "dotenv": "^8.2.0",
+    "fastify": "^2.15.0",
+    "fastify-sensible": "^2.1.1",
     "googleapis": "^52.1.0"
+  },
+  "devDependencies": {
+    "husky": "^4.2.5",
+    "lint-staged": "^10.2.11",
+    "prettier": "^2.0.5"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,css,md}": "prettier --write"
   }
 }

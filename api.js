@@ -3,17 +3,16 @@
 /**
  * @typedef { import("googleapis").sheets_v4 } sheets_v4
  */
-const { google } = require('googleapis');
-const sheets = google.sheets('v4');
+const { google } = require("googleapis");
+const sheets = google.sheets("v4");
 
 async function authorize() {
   const auth = new google.auth.GoogleAuth({
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
 
   const client = await auth.getClient();
   const creds = await auth.getCredentials();
-  console.log(creds);
   return client;
 }
 
@@ -28,7 +27,7 @@ async function getSpreadsheet(auth, spreadsheetId) {
   if (!spreadsheetId) {
     throw new Error(`'spreadsheetId' is a required parameter`);
   }
-  const fs = require('fs').promises;
+  const fs = require("fs").promises;
   const spreadsheet = (
     await sheets.spreadsheets.get({
       auth,
@@ -53,7 +52,7 @@ async function clearSheet(auth, spreadsheetId, sheetId) {
             range: {
               sheetId,
             },
-            fields: '*',
+            fields: "*",
           },
         },
       ],
@@ -107,7 +106,7 @@ async function writeDataToSpreadsheet(auth, spreadsheetId, data) {
     auth,
     spreadsheetId,
     resource: {
-      valueInputOption: 'USER_ENTERED',
+      valueInputOption: "USER_ENTERED",
       data,
     },
   });
@@ -142,7 +141,7 @@ async function formatCells(auth, spreadsheetId, formats) {
             userEnteredFormat: format,
           },
           // only fields listed in "fields" are updated
-          fields: `userEnteredFormat(${Object.keys(format).join(',')})`,
+          fields: `userEnteredFormat(${Object.keys(format).join(",")})`,
         },
       })),
     },
@@ -164,7 +163,7 @@ async function updateDimensions(auth, spreadsheetId, dimensions) {
           properties: {
             pixelSize,
           },
-          fields: 'pixelSize',
+          fields: "pixelSize",
         },
       })),
     },
@@ -172,4 +171,3 @@ async function updateDimensions(auth, spreadsheetId, dimensions) {
 }
 
 module.exports.updateDimensions = updateDimensions;
-
