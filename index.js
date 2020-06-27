@@ -30,13 +30,26 @@ fastify.get("/", async (request, reply) => {
   reply.send("OK");
 });
 
+function parseSheet(sheet) {
+  const rowData = sheet.data[0].rowData.map((row) => {
+    const cells = row.values.map((cell) => {
+      return cell.effectiveValue.stringValue || cell.effectiveValue.numberValue;
+    });
+    return { cells };
+  });
+  return {
+    title: sheet.properties.title,
+    rowData,
+  };
+}
+
 fastify.get("/:spreadsheetId", async (request, reply) => {
   const { spreadsheetId } = request.params;
   handleRequest(request, reply, async ({ spreadsheetId }) => {
     const response = await api.getSpreadsheet(auth, spreadsheetId);
     return {
       title: response.properties.title,
-      sheets: response.sheets,
+      sheets: response.sheets.map(parseSheet),
     };
   });
 });
