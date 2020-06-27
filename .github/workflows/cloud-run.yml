@@ -6,7 +6,7 @@ on:
       - master
 
 env:
-  PROJECT_ID: build-tridnguyn-com
+  PROJECT_ID: build-tridnguyen-com
   RUN_REGION: us-central1
   SERVICE_NAME: sheets
 
