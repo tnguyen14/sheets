@@ -11,6 +11,10 @@ let auth;
 
 fastify.register(require("fastify-sensible"));
 
+fastify.register(require("fastify-cors"), {
+  origin: ["https://lab.tridnguyen.com", "https://tridnguyen.com"],
+});
+
 fastify.setErrorHandler((err, req, reply) => {
   console.log("Default error handler", err);
   reply.send(err);
