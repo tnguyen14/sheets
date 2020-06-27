@@ -1,0 +1,45 @@
+name: Build and Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  PROJECT_ID: build-tridnguyn-com
+  RUN_REGION: us-central1
+  SERVICE_NAME: sheets
+
+jobs:
+  setup-build-deploy:
+    name: Setup, Build, and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # Setup gcloud CLI
+      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+        with:
+          version: '288.0.0'
+          service_account_email: 'github-actions@build-tridnguyen-com.iam.gserviceaccount.com'
+          service_account_key: ${{ secrets.SA_KEY }}
+          project_id: 'build-tridnguyen-com'
+
+      # Build and push image to Google Container Registry
+      - name: Build
+        run: |-
+          gcloud builds submit \
+            --quiet \
+            --tag "gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA"
+
+      # Deploy image to Cloud Run
+      - name: Deploy
+        run: |-
+          gcloud run deploy "$SERVICE_NAME" \
+            --quiet \
+            --region "$RUN_REGION" \
+            --image "gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA" \
+            --platform "managed" \
+            --allow-unauthenticated
