@@ -1,24 +1,20 @@
 require("dotenv").config();
 
-const api = require("./api");
-
-const fastify = require("fastify")({
-  // logger: true,
-  ignoreTrailingSlash: true,
+const server = require("@tridnguyen/fastify-server")({
+  auth0Domain: process.env.AUTH0_DOMAIN,
+  auth0ClientId: process.env.AUTH0_CLIENT_ID,
+  allowedOrigins: ["https://lab.tridnguyen.com", "https://tridnguyen.com"],
+  shouldPerformJwtCheck: false,
 });
 
-let auth;
-
-fastify.register(require("fastify-sensible"));
-
-fastify.register(require("fastify-cors"), {
-  origin: ["https://lab.tridnguyen.com", "https://tridnguyen.com"],
-});
-
-fastify.setErrorHandler((err, req, reply) => {
-  console.log("Default error handler", err);
+server.setErrorHandler((err, request, reply) => {
+  console.error(err);
   reply.send(err);
 });
+
+const api = require("./api");
+
+let auth;
 
 async function handleRequest(request, reply, fn) {
   try {
@@ -30,7 +26,7 @@ async function handleRequest(request, reply, fn) {
   }
 }
 
-fastify.get("/", async (request, reply) => {
+server.get("/", async (request, reply) => {
   reply.send("OK");
 });
 
@@ -55,7 +51,7 @@ function parseSheet(sheet) {
   return _s;
 }
 
-fastify.get("/:spreadsheetId", async (request, reply) => {
+server.get("/:spreadsheetId", async (request, reply) => {
   const { spreadsheetId } = request.params;
   handleRequest(request, reply, async ({ spreadsheetId }) => {
     const response = await api.getSpreadsheet(auth, spreadsheetId);
@@ -69,10 +65,8 @@ fastify.get("/:spreadsheetId", async (request, reply) => {
 async function start() {
   try {
     auth = await api.authorize();
-    await fastify.listen(process.env.PORT || 3000, "0.0.0.0");
-    console.log("Server started", {
-      env: process.env,
-    });
+    await server.listen(process.env.PORT || 3000, "0.0.0.0");
+    console.log("Server started");
   } catch (err) {
     console.error(err);
     process.exit(1);
