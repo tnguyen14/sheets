@@ -1,10 +1,14 @@
-FROM mhart/alpine-node:12
+FROM mhart/alpine-node:14
 
 WORKDIR /src
 
-COPY package.json /src/
-COPY package-lock.json /src/
-RUN npm install
-COPY . /src/
+COPY package.json package-lock.json ./
 
-CMD ["npm", "start"]
+RUN npm ci --prod
+
+FROM mhart/alpine-node:slim-14
+
+WORKDIR /src
+COPY --from=0 /src .
+COPY . .
+CMD ["node", "index.js"]
