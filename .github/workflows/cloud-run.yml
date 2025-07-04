@@ -7,7 +7,7 @@ on:
 
 env:
   PROJECT_ID: build-tridnguyen-com
-  RUN_REGION: us-central1
+  REPOSITORY: sheets
   SERVICE_NAME: sheets
 
 jobs:
@@ -17,29 +17,28 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      # Setup gcloud CLI
-      - uses: GoogleCloudPlatform/github-actions/setup-gcloud@master
+      - name: Auth
+        uses: google-github-actions/auth@v2
+
         with:
-          version: '290.0.1'
-          service_account_email: 'github-actions@build-tridnguyen-com.iam.gserviceaccount.com'
-          service_account_key: ${{ secrets.SA_KEY }}
-          project_id: 'build-tridnguyen-com'
+          credentials_json: ${{ secrets.SA_KEY }}
 
-      # Build and push image to Google Container Registry
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: gcloud info
+        run: 'gcloud info'
+
       - name: Build
         run: |-
           gcloud builds submit \
             --quiet \
-            --tag "gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA"
+            --tag "us-central1-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$SERVICE_NAME:$GITHUB_SHA"
 
-      # Deploy image to Cloud Run
       - name: Deploy
-        run: |-
-          gcloud run deploy "$SERVICE_NAME" \
-            --quiet \
-            --region "$RUN_REGION" \
-            --image "gcr.io/$PROJECT_ID/$SERVICE_NAME:$GITHUB_SHA" \
-            --platform "managed" \
-            --allow-unauthenticated
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          image: "us-central1-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }}"
