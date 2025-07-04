@@ -1,9 +1,9 @@
-name: Build and Deploy to Cloud Run
+name: Image and Deploy to Cloud Run
 
 on:
   push:
     branches:
-      - master
+      - main
 
 env:
   PROJECT_ID: build-tridnguyen-com
@@ -11,8 +11,8 @@ env:
   SERVICE_NAME: sheets
 
 jobs:
-  setup-build-deploy:
-    name: Setup, Build, and Deploy
+  deploy:
+    name: Publish Image and Deploy Cloud Run
     runs-on: ubuntu-latest
 
     steps:
