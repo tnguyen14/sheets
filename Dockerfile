@@ -1,12 +1,12 @@
-FROM mhart/alpine-node:14
+FROM node:lts-alpine
 
 WORKDIR /src
 
 COPY package.json package-lock.json ./
 
-RUN npm ci --prod
+RUN npm ci --omit=dev
 
-FROM mhart/alpine-node:slim-14
+FROM node:lts-alpine
 
 WORKDIR /src
 COPY --from=0 /src .
