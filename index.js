@@ -1,4 +1,7 @@
-const server = require("@tridnguyen/fastify-server")({
+import fastifyServer from "@tridnguyen/fastify-server";
+import * as api from "./api.js";
+
+const server = fastifyServer({
   allowedOrigins: ["https://lab.tridnguyen.com", "https://tridnguyen.com"],
   shouldPerformJwtCheck: false,
 });
@@ -7,8 +10,6 @@ server.setErrorHandler((err, request, reply) => {
   console.error(err);
   reply.send(err);
 });
-
-const api = require("./api");
 
 let auth;
 

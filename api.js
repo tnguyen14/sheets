@@ -3,24 +3,23 @@
 /**
  * @typedef { import("googleapis").sheets_v4 } sheets_v4
  */
-const { google } = require("googleapis");
+import { google } from "googleapis";
+
 const sheets = google.sheets("v4");
 
-async function authorize() {
+export async function authorize() {
   const auth = new google.auth.GoogleAuth({
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
   return auth.getClient();
 }
 
-module.exports.authorize = authorize;
-
 /**
  * @param auth
- * @param {string} [ssId] - ID of the spreadsheet to get (optional)
+ * @param {string} [spreadsheetId] - ID of the spreadsheet to get (optional)
  * @return {Promise<sheets_v4.Schema$Spreadsheet>}
  */
-async function getSpreadsheet(auth, spreadsheetId) {
+export async function getSpreadsheet(auth, spreadsheetId) {
   if (!spreadsheetId) {
     throw new Error(`'spreadsheetId' is a required parameter`);
   }
@@ -34,5 +33,3 @@ async function getSpreadsheet(auth, spreadsheetId) {
 
   return spreadsheet;
 }
-
-module.exports.getSpreadsheet = getSpreadsheet;

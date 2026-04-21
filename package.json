@@ -2,6 +2,7 @@
   "name": "@tridnguyen/sheets",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "api.js",
   "scripts": {
     "start": "node index.js",
