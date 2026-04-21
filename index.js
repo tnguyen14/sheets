@@ -12,20 +12,6 @@ const api = require("./api");
 
 let auth;
 
-async function handleRequest(request, reply, fn) {
-  try {
-    const response = await fn(request.params, request.body);
-    reply.send(response);
-  } catch (e) {
-    console.error(e);
-    reply.send(e);
-  }
-}
-
-server.get("/", async (request, reply) => {
-  reply.send("OK");
-});
-
 function parseSheet(sheet) {
   let _s = {};
   if (!sheet) {
@@ -47,15 +33,15 @@ function parseSheet(sheet) {
   return _s;
 }
 
-server.get("/:spreadsheetId", async (request, reply) => {
+server.get("/", async () => "OK");
+
+server.get("/:spreadsheetId", async (request) => {
   const { spreadsheetId } = request.params;
-  handleRequest(request, reply, async ({ spreadsheetId }) => {
-    const response = await api.getSpreadsheet(auth, spreadsheetId);
-    return {
-      title: response.properties.title,
-      sheets: response.sheets.map(parseSheet),
-    };
-  });
+  const response = await api.getSpreadsheet(auth, spreadsheetId);
+  return {
+    title: response.properties.title,
+    sheets: response.sheets.map(parseSheet),
+  };
 });
 
 async function start() {
