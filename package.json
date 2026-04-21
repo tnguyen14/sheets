@@ -6,7 +6,7 @@
   "main": "api.js",
   "scripts": {
     "start": "node index.js",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "repository": {
     "type": "git",
