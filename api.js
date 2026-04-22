@@ -1,25 +1,57 @@
 // @ts-check
 
 /**
- * @typedef { import("googleapis").sheets_v4 } sheets_v4
+ * @typedef {import("googleapis").sheets_v4.Schema$Spreadsheet} Spreadsheet
  */
 import { google } from "googleapis";
 
 const sheets = google.sheets("v4");
+const drive = google.drive("v3");
 
-export async function authorize() {
-  const auth = new google.auth.GoogleAuth({
-    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+const auth = new google.auth.GoogleAuth({
+  scopes: [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive.readonly",
+  ],
+});
+
+const READ_ROLES = new Set([
+  "owner",
+  "organizer",
+  "fileOrganizer",
+  "writer",
+  "commenter",
+  "reader",
+]);
+
+/**
+ * @param {string} fileId
+ * @param {string} email
+ * @return {Promise<boolean>}
+ */
+export async function hasReadAccess(fileId, email) {
+  const { data } = await drive.permissions.list({
+    auth,
+    fileId,
+    fields: "permissions(emailAddress,type,role)",
   });
-  return auth.getClient();
+  const normalizedEmail = email.toLowerCase();
+  return (
+    data.permissions?.some(
+      (permission) =>
+        permission.type === "user" &&
+        permission.emailAddress?.toLowerCase() === normalizedEmail &&
+        !!permission.role &&
+        READ_ROLES.has(permission.role),
+    ) ?? false
+  );
 }
 
 /**
- * @param auth
  * @param {string} [spreadsheetId] - ID of the spreadsheet to get (optional)
- * @return {Promise<sheets_v4.Schema$Spreadsheet>}
+ * @return {Promise<Spreadsheet>}
  */
-export async function getSpreadsheet(auth, spreadsheetId) {
+export async function getSpreadsheet(spreadsheetId) {
   if (!spreadsheetId) {
     throw new Error(`'spreadsheetId' is a required parameter`);
   }

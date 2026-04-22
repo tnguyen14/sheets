@@ -6,9 +6,11 @@ import * as api from "./api.js";
 const config = parseToml(readFileSync("./config.toml", "utf8"));
 const publicSheets = new Set(config.public.sheets);
 
+const auth0Domain = "tridnguyen.auth0.com";
+
 const server = fastifyServer({
   allowedOrigins: ["https://tridnguyen.com"],
-  auth0Domain: "tridnguyen.auth0.com",
+  auth0Domain,
   audience: "https://sheets.cloud.tridnguyen.com",
   shouldPerformJwtCheck: (request) => request.url.startsWith("/private/"),
 });
@@ -17,8 +19,6 @@ server.setErrorHandler((err, request, reply) => {
   console.error(err);
   reply.send(err);
 });
-
-let auth;
 
 function parseSheet(sheet) {
   let _s = {};
@@ -41,6 +41,17 @@ function parseSheet(sheet) {
   return _s;
 }
 
+async function getUserEmail(bearerToken) {
+  const res = await fetch(`https://${auth0Domain}/userinfo`, {
+    headers: { Authorization: `Bearer ${bearerToken}` },
+  });
+  if (!res.ok) {
+    throw new Error(`userinfo failed: ${res.status}`);
+  }
+  const { email } = await res.json();
+  return email;
+}
+
 server.get("/", async () => "OK");
 
 server.get("/public/:spreadsheetId", async (request, reply) => {
@@ -49,16 +60,22 @@ server.get("/public/:spreadsheetId", async (request, reply) => {
     reply.code(404);
     return { error: "Not found" };
   }
-  const response = await api.getSpreadsheet(auth, spreadsheetId);
+  const response = await api.getSpreadsheet(spreadsheetId);
   return {
     title: response.properties.title,
     sheets: response.sheets.map(parseSheet),
   };
 });
 
-server.get("/private/:spreadsheetId", async (request) => {
+server.get("/private/:spreadsheetId", async (request, reply) => {
   const { spreadsheetId } = request.params;
-  const response = await api.getSpreadsheet(auth, spreadsheetId);
+  const bearerToken = request.headers.authorization?.replace(/^Bearer /i, "");
+  const email = await getUserEmail(bearerToken);
+  if (!email || !(await api.hasReadAccess(spreadsheetId, email))) {
+    reply.code(403);
+    return { error: "Forbidden" };
+  }
+  const response = await api.getSpreadsheet(spreadsheetId);
   return {
     title: response.properties.title,
     sheets: response.sheets.map(parseSheet),
@@ -67,7 +84,6 @@ server.get("/private/:spreadsheetId", async (request) => {
 
 async function start() {
   try {
-    auth = await api.authorize();
     await server.listen({ port: process.env.PORT || 3000, host: "0.0.0.0" });
     console.log("Server started");
   } catch (err) {
