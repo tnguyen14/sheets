@@ -7,8 +7,10 @@ const config = parseToml(readFileSync("./config.toml", "utf8"));
 const publicSheets = new Set(config.public.sheets);
 
 const server = fastifyServer({
-  allowedOrigins: ["https://lab.tridnguyen.com", "https://tridnguyen.com"],
-  shouldPerformJwtCheck: false,
+  allowedOrigins: ["https://tridnguyen.com"],
+  auth0Domain: "tridnguyen.auth0.com",
+  audience: "https://sheets.cloud.tridnguyen.com",
+  shouldPerformJwtCheck: (request) => request.url.startsWith("/private/"),
 });
 
 server.setErrorHandler((err, request, reply) => {
@@ -47,6 +49,15 @@ server.get("/public/:spreadsheetId", async (request, reply) => {
     reply.code(404);
     return { error: "Not found" };
   }
+  const response = await api.getSpreadsheet(auth, spreadsheetId);
+  return {
+    title: response.properties.title,
+    sheets: response.sheets.map(parseSheet),
+  };
+});
+
+server.get("/private/:spreadsheetId", async (request) => {
+  const { spreadsheetId } = request.params;
   const response = await api.getSpreadsheet(auth, spreadsheetId);
   return {
     title: response.properties.title,
