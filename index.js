@@ -1,5 +1,9 @@
+import { readFileSync } from "node:fs";
+import { parse as parseToml } from "smol-toml";
 import fastifyServer from "@tridnguyen/fastify-server";
 import * as api from "./api.js";
+
+const config = parseToml(readFileSync("./config.toml", "utf8"));
 
 const server = fastifyServer({
   allowedOrigins: ["https://lab.tridnguyen.com", "https://tridnguyen.com"],

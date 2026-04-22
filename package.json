@@ -20,7 +20,8 @@
   "homepage": "https://github.com/tnguyen14/sheets#readme",
   "dependencies": {
     "@tridnguyen/fastify-server": "^4.0.2",
-    "googleapis": "^171.4.0"
+    "googleapis": "^171.4.0",
+    "smol-toml": "^1.6.1"
   },
   "devDependencies": {
     "husky": "^9.1.7",
