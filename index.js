@@ -4,6 +4,7 @@ import fastifyServer from "@tridnguyen/fastify-server";
 import * as api from "./api.js";
 
 const config = parseToml(readFileSync("./config.toml", "utf8"));
+const publicSheets = new Set(config.public.sheets);
 
 const server = fastifyServer({
   allowedOrigins: ["https://lab.tridnguyen.com", "https://tridnguyen.com"],
@@ -40,8 +41,12 @@ function parseSheet(sheet) {
 
 server.get("/", async () => "OK");
 
-server.get("/:spreadsheetId", async (request) => {
+server.get("/public/:spreadsheetId", async (request, reply) => {
   const { spreadsheetId } = request.params;
+  if (!publicSheets.has(spreadsheetId)) {
+    reply.code(404);
+    return { error: "Not found" };
+  }
   const response = await api.getSpreadsheet(auth, spreadsheetId);
   return {
     title: response.properties.title,
