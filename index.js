@@ -12,7 +12,10 @@ const server = fastifyServer({
   allowedOrigins: ["https://tridnguyen.com"],
   auth0Domain,
   audience: "https://sheets.cloud.tridnguyen.com",
-  shouldPerformJwtCheck: (request) => request.url.startsWith("/private/"),
+  shouldPerformJwtCheck: (request) => {
+    const id = request.params.spreadsheetId;
+    return id != null && !publicSheets.has(id);
+  },
 });
 
 server.setErrorHandler((err, request, reply) => {
@@ -31,35 +34,30 @@ async function getUserEmail(bearerToken) {
   return email;
 }
 
-server.get("/", async () => "OK");
-
-server.get("/public/:spreadsheetId", async (request, reply) => {
+async function checkAccess(request, reply) {
   const { spreadsheetId } = request.params;
-  if (!publicSheets.has(spreadsheetId)) {
-    reply.code(404);
-    return { error: "Not found" };
-  }
-  const response = await sheets.getSpreadsheet(spreadsheetId);
-  return {
-    title: response.properties.title,
-    sheets: response.sheets.map(sheets.parseSheet),
-  };
-});
-
-server.get("/private/:spreadsheetId", async (request, reply) => {
-  const { spreadsheetId } = request.params;
+  if (publicSheets.has(spreadsheetId)) return;
   const bearerToken = request.headers.authorization?.replace(/^Bearer /i, "");
   const email = await getUserEmail(bearerToken);
   if (!email || !(await sheets.hasReadAccess(spreadsheetId, email))) {
-    reply.code(403);
-    return { error: "Forbidden" };
+    return reply.code(403).send({ error: "Forbidden" });
   }
-  const response = await sheets.getSpreadsheet(spreadsheetId);
-  return {
-    title: response.properties.title,
-    sheets: response.sheets.map(sheets.parseSheet),
-  };
-});
+}
+
+server.get("/", async () => "OK");
+
+server.get(
+  "/spreadsheets/:spreadsheetId",
+  { preHandler: checkAccess },
+  async (request) => {
+    const { spreadsheetId } = request.params;
+    const response = await sheets.getSpreadsheet(spreadsheetId);
+    return {
+      title: response.properties.title,
+      sheets: response.sheets.map(sheets.parseSheet),
+    };
+  },
+);
 
 async function start() {
   try {
