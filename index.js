@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { parse as parseToml } from "smol-toml";
 import fastifyServer from "@tridnguyen/fastify-server";
-import * as api from "./api.js";
+import * as api from "./sheets.js";
 
 const config = parseToml(readFileSync("./config.toml", "utf8"));
 const publicSheets = new Set(config.public.sheets);
