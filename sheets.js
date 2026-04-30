@@ -3,6 +3,9 @@
 /**
  * @typedef {import("googleapis").sheets_v4.Schema$Spreadsheet} Spreadsheet
  * @typedef {import("googleapis").sheets_v4.Schema$Sheet} Sheet
+ * @typedef {import("googleapis").sheets_v4.Schema$Table} Table
+ * @typedef {import("googleapis").sheets_v4.Schema$RowData} RowData
+ * @typedef {import("googleapis").sheets_v4.Schema$GridRange} GridRange
  */
 import { google } from "googleapis";
 
@@ -68,26 +71,77 @@ export async function getSpreadsheet(spreadsheetId) {
 }
 
 /**
+ * Extract positional cell values from row data.
+ * @param {RowData[]} rowData
+ * @return {Array<{cells: any[]}>}
+ */
+function parseRowData(rowData) {
+  return rowData.map((row) => ({
+    cells: (row.values ?? []).map((cell) => {
+      const v = cell.effectiveValue;
+      return v?.stringValue ?? v?.numberValue ?? v?.boolValue ?? null;
+    }),
+  }));
+}
+
+/**
  * @param {Sheet} sheet
  */
 export function parseSheet(sheet) {
-  let _s = {};
+  const _s = {};
   if (!sheet) {
     return _s;
   }
   if (sheet.properties) {
     _s.title = sheet.properties.title;
   }
-
-  if (!sheet.data || !sheet.data[0] || !sheet.data[0].rowData) {
+  const rowData = sheet.data?.[0]?.rowData;
+  if (!rowData) {
     return _s;
   }
-  _s.rows = (sheet.data[0].rowData ?? []).map((row) => {
-    const cells = (row.values ?? []).map((cell) => {
-      const v = cell.effectiveValue;
-      return v?.stringValue ?? v?.numberValue ?? v?.boolValue ?? null;
-    });
-    return { cells };
-  });
+  _s.rows = parseRowData(rowData);
   return _s;
+}
+
+/**
+ * Convert positional rows ({cells: [...]}) into records keyed by column name.
+ * @param {Array<{cells: any[]}>} rows
+ * @param {string[]} columnNames
+ */
+export function toRecords(rows, columnNames) {
+  return rows.map((row) => {
+    const record = {};
+    columnNames.forEach((name, i) => {
+      record[name] = row.cells[i] ?? null;
+    });
+    return record;
+  });
+}
+
+/**
+ * @param {Sheet} sheet
+ * @param {Table} table
+ */
+export function parseTable(sheet, table) {
+  const columnProps = table.columnProperties ?? [];
+  const range = table.range ?? {};
+  const rowData = sheet?.data?.[0]?.rowData ?? [];
+  // Slice rowData to the table's data rows (skip header) and table columns.
+  const slicedRowData = rowData
+    .slice((range.startRowIndex ?? 0) + 1, range.endRowIndex)
+    .map((row) => ({
+      values: (row.values ?? []).slice(
+        range.startColumnIndex ?? 0,
+        range.endColumnIndex,
+      ),
+    }));
+  const tableRows = parseRowData(slicedRowData);
+  const records = toRecords(
+    tableRows,
+    columnProps.map((c) => c.columnName),
+  );
+  return {
+    name: table.name,
+    records: records,
+  };
 }

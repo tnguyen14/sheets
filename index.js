@@ -76,6 +76,53 @@ server.get(
   },
 );
 
+server.get(
+  "/spreadsheets/:spreadsheetId/sheets/:sheetId/tables",
+  { preHandler: checkAccess },
+  async (request, reply) => {
+    const { spreadsheetId, sheetId } = request.params;
+    const response = await sheets.getSpreadsheet(spreadsheetId);
+    const sheet = response.sheets.find(
+      (s) => String(s.properties?.sheetId) === sheetId,
+    );
+    if (!sheet) {
+      reply.code(404);
+      return { error: "Sheet not found" };
+    }
+    return {
+      tables: (sheet.tables ?? []).map((t) => ({
+        name: t.name,
+        columns: (t.columnProperties ?? []).map((c) => ({
+          name: c.columnName,
+          type: c.columnType,
+        })),
+      })),
+    };
+  },
+);
+
+server.get(
+  "/spreadsheets/:spreadsheetId/sheets/:sheetId/tables/:tableName",
+  { preHandler: checkAccess },
+  async (request, reply) => {
+    const { spreadsheetId, sheetId, tableName } = request.params;
+    const response = await sheets.getSpreadsheet(spreadsheetId);
+    const sheet = response.sheets.find(
+      (s) => String(s.properties?.sheetId) === sheetId,
+    );
+    if (!sheet) {
+      reply.code(404);
+      return { error: "Sheet not found" };
+    }
+    const table = (sheet.tables ?? []).find((t) => t.name === tableName);
+    if (!table) {
+      reply.code(404);
+      return { error: "Table not found" };
+    }
+    return sheets.parseTable(sheet, table);
+  },
+);
+
 async function start() {
   try {
     await server.listen({ port: process.env.PORT || 3000, host: "0.0.0.0" });
