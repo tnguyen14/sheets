@@ -59,6 +59,23 @@ server.get(
   },
 );
 
+server.get(
+  "/spreadsheets/:spreadsheetId/sheets/:sheetId",
+  { preHandler: checkAccess },
+  async (request, reply) => {
+    const { spreadsheetId, sheetId } = request.params;
+    const response = await sheets.getSpreadsheet(spreadsheetId);
+    const sheet = response.sheets.find(
+      (s) => String(s.properties?.sheetId) === sheetId,
+    );
+    if (!sheet) {
+      reply.code(404);
+      return { error: "Sheet not found" };
+    }
+    return sheets.parseSheet(sheet);
+  },
+);
+
 async function start() {
   try {
     await server.listen({ port: process.env.PORT || 3000, host: "0.0.0.0" });
