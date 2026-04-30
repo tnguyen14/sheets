@@ -82,9 +82,10 @@ export function parseSheet(sheet) {
   if (!sheet.data || !sheet.data[0] || !sheet.data[0].rowData) {
     return _s;
   }
-  _s.rows = sheet.data[0].rowData.map((row) => {
-    const cells = row.values.map((cell) => {
-      return cell.effectiveValue.stringValue || cell.effectiveValue.numberValue;
+  _s.rows = (sheet.data[0].rowData ?? []).map((row) => {
+    const cells = (row.values ?? []).map((cell) => {
+      const v = cell.effectiveValue;
+      return v?.stringValue ?? v?.numberValue ?? v?.boolValue ?? null;
     });
     return { cells };
   });
