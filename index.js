@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { parse as parseToml } from "smol-toml";
 import fastifyServer from "@tridnguyen/fastify-server";
-import * as api from "./sheets.js";
+import * as sheets from "./sheets.js";
 
 const config = parseToml(readFileSync("./config.toml", "utf8"));
 const publicSheets = new Set(config.public.sheets);
@@ -19,27 +19,6 @@ server.setErrorHandler((err, request, reply) => {
   console.error(err);
   reply.send(err);
 });
-
-function parseSheet(sheet) {
-  let _s = {};
-  if (!sheet) {
-    return _s;
-  }
-  if (sheet.properties) {
-    _s.title = sheet.properties.title;
-  }
-
-  if (!sheet.data || !sheet.data[0] || !sheet.data[0].rowData) {
-    return _s;
-  }
-  _s.rows = sheet.data[0].rowData.map((row) => {
-    const cells = row.values.map((cell) => {
-      return cell.effectiveValue.stringValue || cell.effectiveValue.numberValue;
-    });
-    return { cells };
-  });
-  return _s;
-}
 
 async function getUserEmail(bearerToken) {
   const res = await fetch(`https://${auth0Domain}/userinfo`, {
@@ -60,10 +39,10 @@ server.get("/public/:spreadsheetId", async (request, reply) => {
     reply.code(404);
     return { error: "Not found" };
   }
-  const response = await api.getSpreadsheet(spreadsheetId);
+  const response = await sheets.getSpreadsheet(spreadsheetId);
   return {
     title: response.properties.title,
-    sheets: response.sheets.map(parseSheet),
+    sheets: response.sheets.map(sheets.parseSheet),
   };
 });
 
@@ -71,14 +50,14 @@ server.get("/private/:spreadsheetId", async (request, reply) => {
   const { spreadsheetId } = request.params;
   const bearerToken = request.headers.authorization?.replace(/^Bearer /i, "");
   const email = await getUserEmail(bearerToken);
-  if (!email || !(await api.hasReadAccess(spreadsheetId, email))) {
+  if (!email || !(await sheets.hasReadAccess(spreadsheetId, email))) {
     reply.code(403);
     return { error: "Forbidden" };
   }
-  const response = await api.getSpreadsheet(spreadsheetId);
+  const response = await sheets.getSpreadsheet(spreadsheetId);
   return {
     title: response.properties.title,
-    sheets: response.sheets.map(parseSheet),
+    sheets: response.sheets.map(sheets.parseSheet),
   };
 });
 

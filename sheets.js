@@ -2,6 +2,7 @@
 
 /**
  * @typedef {import("googleapis").sheets_v4.Schema$Spreadsheet} Spreadsheet
+ * @typedef {import("googleapis").sheets_v4.Schema$Sheet} Sheet
  */
 import { google } from "googleapis";
 
@@ -64,4 +65,28 @@ export async function getSpreadsheet(spreadsheetId) {
   ).data;
 
   return spreadsheet;
+}
+
+/**
+ * @param {Sheet} sheet
+ */
+export function parseSheet(sheet) {
+  let _s = {};
+  if (!sheet) {
+    return _s;
+  }
+  if (sheet.properties) {
+    _s.title = sheet.properties.title;
+  }
+
+  if (!sheet.data || !sheet.data[0] || !sheet.data[0].rowData) {
+    return _s;
+  }
+  _s.rows = sheet.data[0].rowData.map((row) => {
+    const cells = row.values.map((cell) => {
+      return cell.effectiveValue.stringValue || cell.effectiveValue.numberValue;
+    });
+    return { cells };
+  });
+  return _s;
 }
