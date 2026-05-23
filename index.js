@@ -4,7 +4,7 @@ import fastifyServer from "@tridnguyen/fastify-server";
 import * as sheets from "./sheets.js";
 
 const config = parseToml(readFileSync("./config.toml", "utf8"));
-const publicSheets = new Set(config.public.sheets);
+const publicSheets = new Set(config.public.spreadsheets);
 
 const auth0Domain = "tridnguyen.auth0.com";
 
@@ -34,14 +34,18 @@ async function getUserEmail(bearerToken) {
   return email;
 }
 
-async function checkAccess(request, reply) {
-  const { spreadsheetId } = request.params;
-  if (publicSheets.has(spreadsheetId)) return;
+async function checkPrivateAccess(request, reply, spreadsheetId) {
   const bearerToken = request.headers.authorization?.replace(/^Bearer /i, "");
   const email = await getUserEmail(bearerToken);
   if (!email || !(await sheets.hasReadAccess(spreadsheetId, email))) {
     return reply.code(403).send({ error: "Forbidden" });
   }
+}
+
+async function checkAccess(request, reply) {
+  const { spreadsheetId } = request.params;
+  if (publicSheets.has(spreadsheetId)) return;
+  return checkPrivateAccess(request, reply, spreadsheetId);
 }
 
 server.get("/", async () => "OK");
@@ -120,6 +124,17 @@ server.get(
       return { error: "Table not found" };
     }
     return sheets.parseTable(sheet, table);
+  },
+);
+
+server.get(
+  "/flights",
+  {
+    preHandler: (request, reply) =>
+      checkPrivateAccess(request, reply, config.flights.spreadsheetId),
+  },
+  async (request, reply) => {
+    return {};
   },
 );
 

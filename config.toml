@@ -1,4 +1,7 @@
 [public]
-sheets = [
+spreadsheets = [
   "1t9m4G2uujVZhq8VCrw5VQhxCjT9IVXEeV2SspyhB6cU", # Shows
 ]
+
+[flights]
+spreadsheetId = "1VvW86ZhMbxi4ns8wL9egvNWYllZ6q4g5wE8va7ge6qI" # Flights
