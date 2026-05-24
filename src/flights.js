@@ -66,11 +66,8 @@ export async function getPendingTrips() {
  * @return {string|null}
  */
 function getTripYear(trip) {
-  const value = trip["Flight date"];
-  if (value == null) {
-    return null;
-  }
-  const match = String(value).match(/\b(?:19|20)\d{2}\b/);
+  const flightDate = trip["Flight date"];
+  const match = flightDate.match(/\b(?:19|20)\d{2}\b/);
   return match ? match[0] : null;
 }
 
