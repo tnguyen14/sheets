@@ -138,6 +138,24 @@ server.get(
 );
 
 server.get(
+  "/flights/completed/:year",
+  {
+    preHandler: (request, reply) =>
+      checkPrivateAccess(request, reply, config.flights.spreadsheetId),
+  },
+  async (request, reply) => {
+    const { year } = request.params;
+    if (!/^\d{4}$/.test(year)) {
+      reply.code(400);
+      return { error: "Invalid year" };
+    }
+
+    const completedByYear = await getCompletedTrips();
+    return completedByYear[year] ?? [];
+  },
+);
+
+server.get(
   "/flights/pending",
   {
     preHandler: (request, reply) =>
