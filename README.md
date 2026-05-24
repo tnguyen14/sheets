@@ -13,5 +13,5 @@ For local dev, identity is `sheets-muffin@build-tridnguyen-com.iam.gserviceaccou
 ## Local development
 
 ```sh
-
+docker compose up
 ```

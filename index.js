@@ -134,7 +134,43 @@ server.get(
       checkPrivateAccess(request, reply, config.flights.spreadsheetId),
   },
   async (request, reply) => {
-    return {};
+    const rows = await sheets.getRangeValues(
+      config.flights.spreadsheetId,
+      "Trips!A:Q",
+    );
+    if (rows.length === 0) {
+      return { completedTrips: [], pendingTrips: [] };
+    }
+
+    const [headers, ...dataRows] = rows;
+    const requiredTripFields = ["Airline", "From", "To", "Sched. Dep."];
+    const requiredIndexes = requiredTripFields.map((header) =>
+      headers.indexOf(header),
+    );
+    const flownIndex = headers.indexOf("Flown");
+    const isNonEmpty = (value) => value != null && String(value).trim() !== "";
+    const hasRequiredTripFields = (row) =>
+      requiredIndexes.every((index) => index >= 0 && isNonEmpty(row[index]));
+    const isCompletedTrip = (row) =>
+      flownIndex >= 0 && isNonEmpty(row[flownIndex]);
+
+    const validRows = dataRows.filter(hasRequiredTripFields);
+    const completedTrips = [];
+    const pendingTrips = [];
+
+    validRows.forEach((row) => {
+      const record = {};
+      headers.forEach((header, i) => {
+        record[header] = row[i] ?? null;
+      });
+      if (isCompletedTrip(row)) {
+        completedTrips.push(record);
+      } else {
+        pendingTrips.push(record);
+      }
+    });
+
+    return { completedTrips, pendingTrips };
   },
 );
 

@@ -71,6 +71,28 @@ export async function getSpreadsheet(spreadsheetId) {
 }
 
 /**
+ * Fetch values from a specific A1 range in a spreadsheet.
+ * @param {string} spreadsheetId
+ * @param {string} range
+ * @return {Promise<any[][]>}
+ */
+export async function getRangeValues(spreadsheetId, range) {
+  if (!spreadsheetId) {
+    throw new Error(`'spreadsheetId' is a required parameter`);
+  }
+  if (!range) {
+    throw new Error(`'range' is a required parameter`);
+  }
+
+  const response = await sheets.spreadsheets.values.get({
+    auth,
+    spreadsheetId,
+    range,
+  });
+  return response.data.values ?? [];
+}
+
+/**
  * Extract positional cell values from row data.
  * @param {RowData[]} rowData
  * @return {Array<{cells: any[]}>}
