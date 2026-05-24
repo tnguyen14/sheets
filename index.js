@@ -137,7 +137,20 @@ server.get(
       checkPrivateAccess(request, reply, config.flights.spreadsheetId),
   },
   async (request, reply) => {
-    return (await getTrips()).filter((trip) => trip.Flown === "Y");
+    const completedTrips = (await getTrips()).filter(
+      (trip) => trip.Flown === "Y",
+    );
+    // group completed trips by year
+    return completedTrips.reduce((acc, trip) => {
+      const year = getTripYear(trip);
+      // skip trip if year cannot be determined
+      if (!year) {
+        return acc;
+      }
+      acc[year] ??= [];
+      acc[year].push(trip);
+      return acc;
+    }, {});
   },
 );
 
@@ -154,6 +167,22 @@ server.get(
 
 function isNonEmpty(value) {
   return value != null && String(value).trim() !== "";
+}
+
+/**
+ * Extract a 4-digit year from a trip's formatted "Flight date".
+ * Order-agnostic (handles 2026-05-24, 5/24/2026, "May 24, 2026"); returns
+ * null when no year is present.
+ * @param {Record<string, any>} trip
+ * @return {string|null}
+ */
+function getTripYear(trip) {
+  const value = trip["Flight date"];
+  if (value == null) {
+    return null;
+  }
+  const match = String(value).match(/\b(?:19|20)\d{2}\b/);
+  return match ? match[0] : null;
 }
 
 async function getTrips() {
