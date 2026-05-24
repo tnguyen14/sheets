@@ -5,3 +5,7 @@ spreadsheets = [
 
 [flights]
 spreadsheetId = "1VvW86ZhMbxi4ns8wL9egvNWYllZ6q4g5wE8va7ge6qI" # Flights
+[flights.trips]
+sheetName = "Trips"
+columnRange = "A:Q"
+requiredColumns = ["Airline", "From", "To", "Sched. Dep."]

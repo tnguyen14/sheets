@@ -5,6 +5,9 @@ import * as sheets from "./sheets.js";
 
 const config = parseToml(readFileSync("./config.toml", "utf8"));
 const publicSheets = new Set(config.public.spreadsheets);
+const tripsSheetName = config.flights.trips.sheetName;
+const tripsColumnRange = config.flights.trips.columnRange;
+const tripsRequiredColumns = config.flights.trips.requiredColumns;
 
 const auth0Domain = "tridnguyen.auth0.com";
 
@@ -128,51 +131,55 @@ server.get(
 );
 
 server.get(
-  "/flights",
+  "/flights/completed",
   {
     preHandler: (request, reply) =>
       checkPrivateAccess(request, reply, config.flights.spreadsheetId),
   },
   async (request, reply) => {
-    const rows = await sheets.getRangeValues(
-      config.flights.spreadsheetId,
-      "Trips!A:Q",
-    );
-    if (rows.length === 0) {
-      return { completedTrips: [], pendingTrips: [] };
-    }
-
-    const [headers, ...dataRows] = rows;
-    const requiredTripFields = ["Airline", "From", "To", "Sched. Dep."];
-    const requiredIndexes = requiredTripFields.map((header) =>
-      headers.indexOf(header),
-    );
-    const flownIndex = headers.indexOf("Flown");
-    const isNonEmpty = (value) => value != null && String(value).trim() !== "";
-    const hasRequiredTripFields = (row) =>
-      requiredIndexes.every((index) => index >= 0 && isNonEmpty(row[index]));
-    const isCompletedTrip = (row) =>
-      flownIndex >= 0 && isNonEmpty(row[flownIndex]);
-
-    const validRows = dataRows.filter(hasRequiredTripFields);
-    const completedTrips = [];
-    const pendingTrips = [];
-
-    validRows.forEach((row) => {
-      const record = {};
-      headers.forEach((header, i) => {
-        record[header] = row[i] ?? null;
-      });
-      if (isCompletedTrip(row)) {
-        completedTrips.push(record);
-      } else {
-        pendingTrips.push(record);
-      }
-    });
-
-    return { completedTrips, pendingTrips };
+    return (await getTrips()).filter((trip) => trip.Flown === "Y");
   },
 );
+
+server.get(
+  "/flights/pending",
+  {
+    preHandler: (request, reply) =>
+      checkPrivateAccess(request, reply, config.flights.spreadsheetId),
+  },
+  async (request, reply) => {
+    return (await getTrips()).filter((trip) => trip.Flown !== "Y");
+  },
+);
+
+function isNonEmpty(value) {
+  return value != null && String(value).trim() !== "";
+}
+
+async function getTrips() {
+  const rows = await sheets.getRangeValues(
+    config.flights.spreadsheetId,
+    `${tripsSheetName}!${tripsColumnRange}`,
+  );
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const [headers, ...dataRows] = rows;
+  const requiredIndexes = tripsRequiredColumns.map((header) =>
+    headers.indexOf(header),
+  );
+  const hasRequiredTripFields = (row) =>
+    requiredIndexes.every((index) => index >= 0 && isNonEmpty(row[index]));
+
+  return dataRows.filter(hasRequiredTripFields).map((row) => {
+    const record = {};
+    headers.forEach((header, i) => {
+      record[header] = row[i] ?? null;
+    });
+    return record;
+  });
+}
 
 async function start() {
   try {
