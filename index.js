@@ -1,13 +1,9 @@
-import { readFileSync } from "node:fs";
-import { parse as parseToml } from "smol-toml";
 import fastifyServer from "@tridnguyen/fastify-server";
 import * as sheets from "./sheets.js";
+import { getCompletedTrips, getPendingTrips } from "./flights.js";
+import { config } from "./config.js";
 
-const config = parseToml(readFileSync("./config.toml", "utf8"));
 const publicSheets = new Set(config.public.spreadsheets);
-const tripsSheetName = config.flights.trips.sheetName;
-const tripsColumnRange = config.flights.trips.columnRange;
-const tripsRequiredColumns = config.flights.trips.requiredColumns;
 
 const auth0Domain = "tridnguyen.auth0.com";
 
@@ -137,20 +133,7 @@ server.get(
       checkPrivateAccess(request, reply, config.flights.spreadsheetId),
   },
   async (request, reply) => {
-    const completedTrips = (await getTrips()).filter(
-      (trip) => trip.Flown === "Y",
-    );
-    // group completed trips by year
-    return completedTrips.reduce((acc, trip) => {
-      const year = getTripYear(trip);
-      // skip trip if year cannot be determined
-      if (!year) {
-        return acc;
-      }
-      acc[year] ??= [];
-      acc[year].push(trip);
-      return acc;
-    }, {});
+    return getCompletedTrips();
   },
 );
 
@@ -161,54 +144,9 @@ server.get(
       checkPrivateAccess(request, reply, config.flights.spreadsheetId),
   },
   async (request, reply) => {
-    return (await getTrips()).filter((trip) => trip.Flown !== "Y");
+    return getPendingTrips();
   },
 );
-
-function isNonEmpty(value) {
-  return value != null && String(value).trim() !== "";
-}
-
-/**
- * Extract a 4-digit year from a trip's formatted "Flight date".
- * Order-agnostic (handles 2026-05-24, 5/24/2026, "May 24, 2026"); returns
- * null when no year is present.
- * @param {Record<string, any>} trip
- * @return {string|null}
- */
-function getTripYear(trip) {
-  const value = trip["Flight date"];
-  if (value == null) {
-    return null;
-  }
-  const match = String(value).match(/\b(?:19|20)\d{2}\b/);
-  return match ? match[0] : null;
-}
-
-async function getTrips() {
-  const rows = await sheets.getRangeValues(
-    config.flights.spreadsheetId,
-    `${tripsSheetName}!${tripsColumnRange}`,
-  );
-  if (rows.length === 0) {
-    return [];
-  }
-
-  const [headers, ...dataRows] = rows;
-  const requiredIndexes = tripsRequiredColumns.map((header) =>
-    headers.indexOf(header),
-  );
-  const hasRequiredTripFields = (row) =>
-    requiredIndexes.every((index) => index >= 0 && isNonEmpty(row[index]));
-
-  return dataRows.filter(hasRequiredTripFields).map((row) => {
-    const record = {};
-    headers.forEach((header, i) => {
-      record[header] = row[i] ?? null;
-    });
-    return record;
-  });
-}
 
 async function start() {
   try {
