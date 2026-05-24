@@ -3,13 +3,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    working_dir: /src
+    working_dir: /app
     ports:
       - "3000:3000"
     environment:
       GOOGLE_APPLICATION_CREDENTIALS: /credentials/build-tridnguyen-com-0b310d33ba74.json
     volumes:
-      - ./:/src
-      - /src/node_modules
+      - ./:/app
+      - /app/node_modules
       - ./credentials:/credentials:ro
-    command: npx nodemon index.js
+    command: npx nodemon src/index.js

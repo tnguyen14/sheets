@@ -1,6 +1,6 @@
 FROM node:lts-alpine
 
-WORKDIR /src
+WORKDIR /app
 
 COPY package.json package-lock.json ./
 
@@ -8,7 +8,7 @@ RUN npm ci --omit=dev
 
 FROM node:lts-alpine
 
-WORKDIR /src
-COPY --from=0 /src .
+WORKDIR /app
+COPY --from=0 /app .
 COPY . .
-CMD ["node", "index.js"]
+CMD ["node", "src/index.js"]
