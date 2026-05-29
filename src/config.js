@@ -20,9 +20,15 @@ import { parse as parseToml } from "smol-toml";
  */
 
 /**
+ * @typedef {Object} Auth
+ * @property {Object.<string, string>} machines - Auth0 M2M client_id -> email
+ */
+
+/**
  * @typedef {Object} Config
  * @property {Public} public
  * @property {Flights} flights
+ * @property {Auth} [auth]
  */
 
 /** @type {Config} */

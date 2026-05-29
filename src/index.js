@@ -4,6 +4,7 @@ import { getCompletedTrips, getPendingTrips } from "./flights.js";
 import { config } from "./config.js";
 
 const publicSheets = new Set(config.public.spreadsheets);
+const machineEmails = config.auth?.machines ?? {};
 
 const auth0Domain = "tridnguyen.auth0.com";
 
@@ -12,8 +13,12 @@ const server = fastifyServer({
   auth0Domain,
   audience: "https://sheets.cloud.tridnguyen.com",
   shouldPerformJwtCheck: (request) => {
-    const id = request.params.spreadsheetId;
-    return id != null && !publicSheets.has(id);
+    const path = request.url.split("?")[0];
+    // Routes that are readable without a token.
+    const isHealthcheck = path === "/";
+    const isPublicSpreadsheet = publicSheets.has(request.params.spreadsheetId);
+    // Everything else (private spreadsheets, flights) requires a verified token.
+    return !(isHealthcheck || isPublicSpreadsheet);
   },
 });
 
@@ -33,9 +38,53 @@ async function getUserEmail(bearerToken) {
   return email;
 }
 
-async function checkPrivateAccess(request, reply, spreadsheetId) {
+// Get email address associated with JWT token
+//
+// A machine-to-machine (client-credentials) token has no user, so
+// /userinfo can't supply an email. Example payload:
+//
+//   {
+//     iss: "https://tridnguyen.auth0.com/",
+//     sub: "z3IK464A6PogdpKe0LY0vTaKr6izei2a@clients", // <client_id>@clients
+//     aud: "https://sheets.cloud.tridnguyen.com",       // API audience only
+//     azp: "z3IK464A6PogdpKe0LY0vTaKr6izei2a",          // the client_id
+//     gty: "client-credentials",
+//     iat: 1681053925,
+//     exp: 1681140325
+//   }
+//
+// A user token carries a real `sub`, a `scope` that includes "email",
+// and the .../userinfo audience; for those we fall back to the Auth0 /userinfo
+// profile. Example payload:
+//
+//   {
+//     iss: "https://tridnguyen.auth0.com/",
+//     sub: "google-oauth2|102956012089794272878", // the user identity
+//     aud: [
+//       "https://sheets.cloud.tridnguyen.com",
+//       "https://tridnguyen.auth0.com/userinfo"   // userinfo audience
+//     ],
+//     azp: "z3IK464A6PogdpKe0LY0vTaKr6izei2a",
+//     scope: "openid profile email offline_access",
+//     iat: 1681053925,
+//     exp: 1681140325
+//   }
+async function getRequestEmail(request) {
+  const payload = request.user;
+  console.log(payload);
+  const isMachineToken =
+    payload?.gty === "client-credentials" ||
+    (typeof payload?.sub === "string" && payload.sub.endsWith("@clients"));
+  if (isMachineToken) {
+    const clientId = payload.azp ?? payload.sub?.replace(/@clients$/, "");
+    return machineEmails[clientId];
+  }
   const bearerToken = request.headers.authorization?.replace(/^Bearer /i, "");
-  const email = await getUserEmail(bearerToken);
+  return getUserEmail(bearerToken);
+}
+
+async function checkPrivateAccess(request, reply, spreadsheetId) {
+  const email = await getRequestEmail(request);
   if (!email || !(await sheets.hasReadAccess(spreadsheetId, email))) {
     return reply.code(403).send({ error: "Forbidden" });
   }

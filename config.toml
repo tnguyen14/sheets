@@ -3,6 +3,11 @@ spreadsheets = [
   "1t9m4G2uujVZhq8VCrw5VQhxCjT9IVXEeV2SspyhB6cU", # Shows
 ]
 
+[auth.machines]
+# Mapping of Auth0 machine-to-machine client_id's to
+# emails of Google Cloud service account.
+"rOso6tx7YhC2IScJqLwp0ycRnCYQaOGB" = "yakult-pengwin-openclaw@build-tridnguyen-com.iam.gserviceaccount.com"
+
 [flights]
 spreadsheetId = "1VvW86ZhMbxi4ns8wL9egvNWYllZ6q4g5wE8va7ge6qI" # Flights
 [flights.trips]
