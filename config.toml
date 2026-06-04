@@ -12,5 +12,5 @@ spreadsheets = [
 spreadsheetId = "1VvW86ZhMbxi4ns8wL9egvNWYllZ6q4g5wE8va7ge6qI" # Flights
 [flights.trips]
 sheetName = "Trips"
-columnRange = "A:Q"
+columnRange = "A:R"
 requiredColumns = ["Flight date", "Airline", "From", "To", "Sched. Dep."]
