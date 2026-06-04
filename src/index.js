@@ -8,9 +8,13 @@ const publicSheets = new Set(config.public.spreadsheets);
 const machineEmails = config.auth?.machines ?? {};
 
 const auth0Domain = "tridnguyen.auth0.com";
+const allowedOrigins = (process.env.ALLOWED_ORIGINS ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 const server = fastifyServer({
-  allowedOrigins: ["https://tridnguyen.com"],
+  allowedOrigins,
   auth0Domain,
   audience: "https://sheets.cloud.tridnguyen.com",
   shouldPerformJwtCheck: (request) => {

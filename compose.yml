@@ -8,6 +8,7 @@ services:
       - "3000:3000"
     environment:
       GOOGLE_APPLICATION_CREDENTIALS: /credentials/build-tridnguyen-com-0b310d33ba74.json
+      ALLOWED_ORIGINS: http://localhost:5173
     volumes:
       - ./:/app
       - /app/node_modules
