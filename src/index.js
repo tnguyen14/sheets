@@ -1,6 +1,7 @@
 import fastifyServer from "@tridnguyen/fastify-server";
 import * as sheets from "./sheets.js";
 import { getCompletedTrips, getPendingTrips } from "./flights.js";
+import { getSchwabData } from "./schwab.js";
 import { config } from "./config.js";
 
 const publicSheets = new Set(config.public.spreadsheets);
@@ -212,6 +213,17 @@ server.get(
   },
   async (request, reply) => {
     return getPendingTrips();
+  },
+);
+
+server.get(
+  "/schwab",
+  {
+    preHandler: (request, reply) =>
+      checkPrivateAccess(request, reply, config.schwab.spreadsheetId),
+  },
+  async () => {
+    return getSchwabData();
   },
 );
 

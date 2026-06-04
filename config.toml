@@ -14,3 +14,8 @@ spreadsheetId = "1VvW86ZhMbxi4ns8wL9egvNWYllZ6q4g5wE8va7ge6qI" # Flights
 sheetName = "Trips"
 columnRange = "A:R"
 requiredColumns = ["Flight date", "Airline", "From", "To", "Sched. Dep."]
+
+[schwab]
+spreadsheetId = "1WHixY8wj6iXj0I29dmJwZwPANhpevXj6QjIz5u5iyRs" # Personal
+sheetName = "Schwab"
+requiredColumns = ["Date", "Action", "Description", "Amount"]

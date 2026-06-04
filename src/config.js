@@ -25,9 +25,17 @@ import { parse as parseToml } from "smol-toml";
  */
 
 /**
+ * @typedef {Object} Schwab
+ * @property {string} spreadsheetId
+ * @property {string} sheetName
+ * @property {string[]} requiredColumns
+ */
+
+/**
  * @typedef {Object} Config
  * @property {Public} public
  * @property {Flights} flights
+ * @property {Schwab} schwab
  * @property {Auth} [auth]
  */
 
