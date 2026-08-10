@@ -6,6 +6,33 @@ on:
       - main
 
 jobs:
+  dev:
+    name: Deploy to Dev
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - id: Auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: projects/516172403097/locations/global/workloadIdentityPools/github/providers/github-tnguyen14
+          service_account: github-actions@dev-build-tridnguyen-com.iam.gserviceaccount.com
+
+      - name: Deploy CloudRun
+        uses: google-github-actions/deploy-cloudrun@v3
+        with:
+          service: sheets
+          source: .
+          region: us-central1
+          env_vars: |
+            ALLOWED_ORIGINS=http://localhost:5173
+
   deploy:
     name: Deploy to Prod
     runs-on: ubuntu-latest

@@ -7,7 +7,11 @@
       "Bash(node *)",
       "Bash(gh run *)",
       "mcp__github__search_code",
-      "mcp__github__get_file_contents"
+      "mcp__github__get_file_contents",
+      "Read(//workspaces/**)",
+      "Read(//home/**)",
+      "mcp__github__get_me",
+      "mcp__github__search_repositories"
     ]
   }
 }
