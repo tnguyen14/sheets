@@ -113,6 +113,8 @@ export async function getSheetRows(
     throw new Error(`'sheetName' is a required parameter`);
   }
 
+  // values.get renders a whole range one way (formatted or unformatted), so
+  // use grid data, which has both values for each cell, to choose per column.
   const { data } = await sheets.spreadsheets.get({
     auth,
     spreadsheetId,
@@ -120,32 +122,21 @@ export async function getSheetRows(
     includeGridData: true,
     fields: "sheets.data.rowData.values(formattedValue,effectiveValue)",
   });
-  const rowData = data.sheets?.[0]?.data?.[0]?.rowData ?? [];
-  return toCellRows(rowData, numberColumns);
-}
-
-/**
- * Convert grid row data into rows of cell values. The first row is treated as
- * headers and always uses formatted values.
- * @param {RowData[]} rowData
- * @param {string[]} numberColumns
- * @return {any[][]}
- */
-export function toCellRows(rowData, numberColumns) {
+  // One sheet and one range were requested, so the response has one grid.
+  const { rowData = [] } = data.sheets[0].data[0];
   if (rowData.length === 0) {
     return [];
   }
-  const [headerRow, ...dataRows] = rowData;
-  const headers = (headerRow.values ?? []).map(
-    (cell) => cell.formattedValue ?? "",
-  );
+
+  const [headerRow, ...dataRows] = rowData.map((row) => row.values ?? []);
+  const headers = headerRow.map((cell) => cell.formattedValue ?? "");
   const numberIndexes = new Set(
-    numberColumns.map((name) => headers.indexOf(name)).filter((i) => i >= 0),
+    numberColumns.map((name) => headers.indexOf(name)),
   );
   return [
     headers,
-    ...dataRows.map((row) =>
-      (row.values ?? []).map((cell, i) =>
+    ...dataRows.map((cells) =>
+      cells.map((cell, i) =>
         numberIndexes.has(i)
           ? (cell.effectiveValue?.numberValue ?? null)
           : (cell.formattedValue ?? null),
