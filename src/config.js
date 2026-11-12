@@ -29,6 +29,7 @@ import { parse as parseToml } from "smol-toml";
  * @property {string} spreadsheetId
  * @property {string} sheetName
  * @property {string[]} requiredColumns
+ * @property {string[]} [numberColumns] - columns returned as unformatted numbers
  */
 
 /**

@@ -93,6 +93,59 @@ export async function getRangeValues(spreadsheetId, range) {
 }
 
 /**
+ * Fetch a sheet's rows, with the first row as headers. Cells return their
+ * formatted text (as shown in the sheet), except cells in `numberColumns`,
+ * which return their unformatted number.
+ * @param {string} spreadsheetId
+ * @param {string} sheetName
+ * @param {{numberColumns?: string[]}} [options]
+ * @return {Promise<any[][]>}
+ */
+export async function getSheetRows(
+  spreadsheetId,
+  sheetName,
+  { numberColumns = [] } = {},
+) {
+  if (!spreadsheetId) {
+    throw new Error(`'spreadsheetId' is a required parameter`);
+  }
+  if (!sheetName) {
+    throw new Error(`'sheetName' is a required parameter`);
+  }
+
+  // values.get renders a whole range one way (formatted or unformatted), so
+  // use grid data, which has both values for each cell, to choose per column.
+  const { data } = await sheets.spreadsheets.get({
+    auth,
+    spreadsheetId,
+    ranges: [sheetName],
+    includeGridData: true,
+    fields: "sheets.data.rowData.values(formattedValue,effectiveValue)",
+  });
+  // One sheet and one range were requested, so the response has one grid.
+  const { rowData = [] } = data.sheets[0].data[0];
+  if (rowData.length === 0) {
+    return [];
+  }
+
+  const [headerRow, ...dataRows] = rowData.map((row) => row.values ?? []);
+  const headers = headerRow.map((cell) => cell.formattedValue ?? "");
+  const numberIndexes = new Set(
+    numberColumns.map((name) => headers.indexOf(name)),
+  );
+  return [
+    headers,
+    ...dataRows.map((cells) =>
+      cells.map((cell, i) =>
+        numberIndexes.has(i)
+          ? (cell.effectiveValue?.numberValue ?? null)
+          : (cell.formattedValue ?? null),
+      ),
+    ),
+  ];
+}
+
+/**
  * Extract positional cell values from row data.
  * @param {RowData[]} rowData
  * @return {Array<{cells: any[]}>}
