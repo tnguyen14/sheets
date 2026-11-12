@@ -19,3 +19,4 @@ requiredColumns = ["Flight date", "Airline", "From", "To", "Sched. Dep."]
 spreadsheetId = "1WHixY8wj6iXj0I29dmJwZwPANhpevXj6QjIz5u5iyRs" # Personal
 sheetName = "Schwab"
 requiredColumns = ["Date", "Action", "Amount"]
+numberColumns = ["Amount"]

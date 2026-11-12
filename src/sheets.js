@@ -93,6 +93,68 @@ export async function getRangeValues(spreadsheetId, range) {
 }
 
 /**
+ * Fetch a sheet's rows, with the first row as headers. Cells return their
+ * formatted text (as shown in the sheet), except cells in `numberColumns`,
+ * which return their unformatted number.
+ * @param {string} spreadsheetId
+ * @param {string} sheetName
+ * @param {{numberColumns?: string[]}} [options]
+ * @return {Promise<any[][]>}
+ */
+export async function getSheetRows(
+  spreadsheetId,
+  sheetName,
+  { numberColumns = [] } = {},
+) {
+  if (!spreadsheetId) {
+    throw new Error(`'spreadsheetId' is a required parameter`);
+  }
+  if (!sheetName) {
+    throw new Error(`'sheetName' is a required parameter`);
+  }
+
+  const { data } = await sheets.spreadsheets.get({
+    auth,
+    spreadsheetId,
+    ranges: [sheetName],
+    includeGridData: true,
+    fields: "sheets.data.rowData.values(formattedValue,effectiveValue)",
+  });
+  const rowData = data.sheets?.[0]?.data?.[0]?.rowData ?? [];
+  return toCellRows(rowData, numberColumns);
+}
+
+/**
+ * Convert grid row data into rows of cell values. The first row is treated as
+ * headers and always uses formatted values.
+ * @param {RowData[]} rowData
+ * @param {string[]} numberColumns
+ * @return {any[][]}
+ */
+export function toCellRows(rowData, numberColumns) {
+  if (rowData.length === 0) {
+    return [];
+  }
+  const [headerRow, ...dataRows] = rowData;
+  const headers = (headerRow.values ?? []).map(
+    (cell) => cell.formattedValue ?? "",
+  );
+  const numberIndexes = new Set(
+    numberColumns.map((name) => headers.indexOf(name)).filter((i) => i >= 0),
+  );
+  return [
+    headers,
+    ...dataRows.map((row) =>
+      (row.values ?? []).map((cell, i) =>
+        numberIndexes.has(i)
+          ? (cell.effectiveValue?.numberValue ?? null)
+          : (cell.formattedValue ?? null),
+      ),
+    ),
+  ];
+}
+
+/**
  * Extract positional cell values from row data.
  * @param {RowData[]} rowData
  * @return {Array<{cells: any[]}>}

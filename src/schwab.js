@@ -9,9 +9,10 @@ const config = appConfig.schwab;
  * @return {Promise<Record<string, any>[]>}
  */
 export async function getSchwabData() {
-  const rows = await sheets.getRangeValues(
+  const rows = await sheets.getSheetRows(
     config.spreadsheetId,
     config.sheetName,
+    { numberColumns: config.numberColumns },
   );
   if (rows.length === 0) {
     return [];
@@ -25,12 +26,14 @@ export async function getSchwabData() {
   const hasRequiredFields = (row) =>
     requiredIndexes.every((index) => index >= 0 && isNonEmpty(row[index]));
 
-  return dataRows.filter(hasRequiredFields).map((/** @type {any[]} */ row) =>
-    headers.reduce(
-      (record, header, i) => ({ ...record, [header]: row[i] ?? null }),
-      {},
-    ),
-  );
+  return dataRows
+    .filter(hasRequiredFields)
+    .map((/** @type {any[]} */ row) =>
+      headers.reduce(
+        (record, header, i) => ({ ...record, [header]: row[i] ?? null }),
+        {},
+      ),
+    );
 }
 
 /**
